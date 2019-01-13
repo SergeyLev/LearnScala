@@ -10,7 +10,6 @@ object AnonymousClasses extends App{
   val funnyAnimal: Animal = new Animal {
     override def eat: Unit = println("ahahahah")
   }
-
   println(funnyAnimal.getClass)
 
   class Person(name: String){
