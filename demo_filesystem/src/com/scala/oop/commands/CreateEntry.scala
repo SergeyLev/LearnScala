@@ -6,11 +6,11 @@ import com.scala.oop.filesystem.State
 abstract class CreateEntry(name: String) extends Command {
   override def apply(state: State): State = {
     val wd = state.wd
-    if(wd.hasEntry(name)){
+    if (wd.hasEntry(name)) {
       state.setMessage("Entry " + name + " already exists!")
-    } else if(name.contains(Directory.SEPARATOR)){
+    } else if (name.contains(Directory.SEPARATOR)) {
       state.setMessage(name + " must not contain separators!")
-    } else if(checkIllegal(name)){
+    } else if (checkIllegal(name)) {
       state.setMessage(name + ": illegal entry name! ")
     } else {
       doCreateEntry(state, name)
@@ -23,16 +23,19 @@ abstract class CreateEntry(name: String) extends Command {
   }
 
   def doCreateEntry(state: State, name: String): State = {
-    def updateStructure(currentDir: Directory, path: List[String], newEntry: DirEntry): Directory = {
+    def updateStructure(currentDir: Directory,
+                        path: List[String],
+                        newEntry: DirEntry): Directory = {
       /* someDir  /a          new someDir  /a
                   /b                       /b
                   /c    =>                 /c
             (new) /d                       /d
-      */
-      if(path.isEmpty) currentDir.addEntry(newEntry)
-      else{
+       */
+      if (path.isEmpty) currentDir.addEntry(newEntry)
+      else {
         val oldEntry = currentDir.findEntry(path.head).asDirectory
-        currentDir.replaceEntry(oldEntry.name, updateStructure(oldEntry, path.tail, newEntry))
+        currentDir.replaceEntry(oldEntry.name,
+                                updateStructure(oldEntry, path.tail, newEntry))
       }
 
     }
