@@ -1,5 +1,8 @@
 package com.scala.oop.commands
+import com.scala.oop.files.{Directory, File}
 import com.scala.oop.filesystem.State
+
+import scala.annotation.tailrec
 
 class Echo(args: Array[String]) extends Command {
   override def apply(state: State): State = {
@@ -11,9 +14,72 @@ class Echo(args: Array[String]) extends Command {
       val filename = args(args.length - 1)
       val content = createContent(args, args.length - 2)
 
+      if (">>".equals(operator))
+        doEcho(state, content, filename, append = true)
+      else if (">".equals(operator))
+        doEcho(state, content, filename, append = false)
+      else
+        state.setMessage(createContent(args, args.length))
     }
 
   }
+  def getNewRootAfterEcho(currentDirectory: Directory,
+                          path: List[String],
+                          contents: String,
+                          append: Boolean): Directory = {
+    if (path.isEmpty) currentDirectory
+    else if (path.tail.isEmpty) {
+      val dirEntry = currentDirectory.findEntry(path.head)
 
-  def createContent(args: Array[String], topIndex: Int): String = ???
+      if (dirEntry == null)
+        currentDirectory.addEntry(
+          new File(currentDirectory.path, path.head, contents))
+      else if (dirEntry.isDirectory) currentDirectory
+      else if (append)
+        currentDirectory.replaceEntry(path.head,
+                                      dirEntry.asFile.appendContents(contents))
+      else
+        currentDirectory.replaceEntry(path.head,
+                                      dirEntry.asFile.setContents(contents))
+    } else {
+      val nextDirectory = currentDirectory.findEntry(path.head).asDirectory
+
+      val newNextDirectory =
+        getNewRootAfterEcho(nextDirectory, path.tail, contents, append)
+
+      if (newNextDirectory == nextDirectory) currentDirectory
+      else currentDirectory.replaceEntry(path.head, newNextDirectory)
+    }
+  }
+
+  def doEcho(state: State,
+             content: String,
+             filename: String,
+             append: Boolean): State = {
+    if (filename.contains(Directory.SEPARATOR))
+      state.setMessage("Echo: filename must not contain separators!")
+    else {
+      val newRoot: Directory = getNewRootAfterEcho(
+        state.root,
+        state.wd.getAllFoldersInPath :+ filename,
+        content,
+        append)
+
+      if (newRoot == state.root)
+        state.setMessage(filename + "no such file")
+      else
+        State(newRoot, newRoot.findDescendant(state.wd.getAllFoldersInPath))
+    }
+  }
+
+  def createContent(args: Array[String], topIndex: Int): String = {
+    @tailrec
+    def createContentHelper(currentIndex: Int, accumulator: String): String = {
+      if (currentIndex >= topIndex) accumulator
+      else
+        createContentHelper(currentIndex + 1,
+                            accumulator + " " + args(currentIndex))
+    }
+    createContentHelper(0, "")
+  }
 }
