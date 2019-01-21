@@ -5,7 +5,7 @@ import java.util.Scanner
 import com.scala.oop.commands.Command
 import com.scala.oop.files.Directory
 
-object Filesystem extends App{
+object Filesystem extends App {
 
   val root = Directory.ROOT
   var state = State(root, root)
